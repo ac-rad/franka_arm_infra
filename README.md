@@ -29,7 +29,7 @@ Before building the docker environments, you need to add your user to the docker
 Note: If using docker-compose version 2, just replace commands containing "docker-compose" with "docker compose" 
 installing docker dependancies 
 
-**Note:** <u>**Realtime Computer**</u><a id='realtime'></a> is the computer that sends/receives data from/to the robot realtime(1Khz). It runs the realtime linux kernel as described [here](https://frankaemika.github.io/docs/installation_linux.html#setting-up-the-real-time-kernel). <u>**Workstation computer**</u><a id='workstation'></a> is the computer that sends high level commands to realtime computer to control the robot, this computer can run GPUs.
+**Note:** <u>**Realtime Computer**</u><a id='realtime'></a> is the computer that sends/receives data from/to the robot realtime (1kHz). It runs the realtime linux kernel as described [here](https://frankaemika.github.io/docs/installation_linux.html#setting-up-the-real-time-kernel). <u>**Workstation computer**</u><a id='workstation'></a> is the computer that sends high level commands to realtime computer to control the robot, this computer can run GPUs.
 
 ## [Real time Computer](#realtime)
 Build docker container for the real time computer directly connected to Franka's control. 
@@ -42,6 +42,8 @@ sudo docker-compose -f docker/realtime_computer/docker-compose-gui.yml build \
 Note: To find your robot server version, first find your robot systems version in Franka Desk -> Settings -> System -> Version. Next find your robot server version corresponding to your system version [here](https://frankaemika.github.io/docs/compatibility.html#compatibility-with-libfranka). eg. for robot system version >=4.2.1, robot server version is 5. 
 
 Note: While building the docker container, the above command might print warnings in red color, don't be alarmed and let the process run. If it stops building, that's when there is an error. 
+
+Note: If `--build-arg` is not available, you need to install newer version docker. (cf. [Install Docker Engine on Ubuntu](https://docs.docker.com/engine/install/ubuntu/))
 
 ### Build franka_control_suite in the realtime docker environment **(optional and not required to use frankapy)**
 open a bash terminal inside the realtime docker container 
@@ -71,9 +73,9 @@ Note: While building the docker container, the above command might print warning
 
 ## Setting up ssh-key between the workstation and realtime computers (done only once)<a id='ssh-key'></a>
 
-Make sure to setup your workstation/workstation docker's ssh key to ssh into the realtime computer/docker without a password(this is required for frankapy) following instructions [here](https://github.com/iamlab-cmu/frankapy#setting-up-ssh-key-to-control-pc), you can run the following, 
+Make sure to setup your workstation docker's ssh key to ssh into the realtime computer without a password (this is required for frankapy) following instructions [here](https://github.com/iamlab-cmu/frankapy#setting-up-ssh-key-to-control-pc), you can run the following, 
 
-1. In a terminal in your **<u>workstation/workstation docker</u>**, 
+1. In a terminal in your **<u>workstation docker</u>**, 
 ```
 ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
 [Press enter]
@@ -83,8 +85,10 @@ eval "$(ssh-agent -s)"
 ssh-add ~/.ssh/id_rsa
 ```
 2. Upload your public ssh key to the **<u>realtime pc</u>**
+
+    If the realtime PC allows password login, you can upload public key by sshing to realtime PC as follows. If not allowed, upload it with a different method.
      
-    i. In a separate terminal on your **<u>workstation PC/docker</u>**, use your favorite text editor to open your id_rsa.pub file.
+    i. In a separate terminal on your **<u>workstation docker</u>**, use your favorite text editor to open your id_rsa.pub file.
     ```
     vim ~/.ssh/id_rsa.pub
     ```
@@ -106,17 +110,17 @@ ssh-add ~/.ssh/id_rsa
 
 # Usage Instructions 
 
-Note: docker-compose provides several commands to use the docker containers that we built in previous steps. They are ["up, start and run"](https://docs.docker.com/compose/faq/#whats-the-difference-between-up-run-and-start). In our docker containers we have not yet defined explicit services, so we can either use up or run. "up" creates or recreates the container(if you made changes to dockerfile or .yml files), therefore you might lose changes you made in the container, like [adding ssh-key](#ssh-key), one way to deal with this is to use "up" command with --no-recreate flag. Additionally, when you run the "up" command, it by default starts with an "attaching" mode where it blocks the terminal and prints error logs if any. Another option as shown below is to use the start command, where the container runs in the background, make sure to "stop" the container when done
+Note: docker-compose provides several commands to use the docker containers that we built in previous steps. They are ["up, start and run"](https://docs.docker.com/compose/faq/#whats-the-difference-between-up-run-and-start). In our docker containers we have not yet defined explicit services, so we can either use up or run. "up" creates or recreates the container (if you made changes to dockerfile or .yml files), therefore you might lose changes you made in the container, like [adding ssh-key](#ssh-key), one way to deal with this is to use "up" command with --no-recreate flag. Additionally, when you run the "up" command, it by default starts with an "attaching" mode where it blocks the terminal and prints error logs if any. Another option as shown below is to use the start command, where the container runs in the background, make sure to "stop" the container when done
 ## [Real time Computer](#realtime)
 In the realtime host computer terminal, bring the built docker container up 
 ```
 sudo docker-compose --no-recreate -f docker/realtime_computer/docker-compose-gui.yml up 
 ```
-or 
+If `--no-recreate` flag is not available, you can omit it for the first run. After the second run, use
 ```
 sudo docker-compose -f docker/realtime_computer/docker-compose-gui.yml start
 ```
-and when you are done with the container, run 
+When you are done with the container, run 
 ```
 sudo docker-compose -f docker/realtime_computer/docker-compose-gui.yml stop
 ```
@@ -132,11 +136,12 @@ In a terminal in the workstation computer
 ```
 sudo docker-compose --no-recreate -f docker/workstation_computer/docker-compose-gui.yml up 
 ```
-or
+
+If `--no-recreate` flag is not available, you can omit it for the first run. After the second run, use
 ```
 sudo docker-compose -f docker/workstation_computer/docker-compose-gui.yml start
 ```
-and when you are done with the container, run 
+When you are done with the container, run 
 ```
 sudo docker-compose -f docker/workstation_computer/docker-compose-gui.yml stop
 ```
@@ -153,7 +158,7 @@ then to open a bash terminal inside the workstation docker container that we sta
 ## Using frankapy 
 Frankapy can be used with the real time docker and optionally with workstation_computer docker(if you don't use a docker for workstation, build and use [this frankapy](https://github.com/Ruthrash/frankapy)) 
 
-**First** In your realtime pc, start the realtime computer docker with,
+In your realtime pc, start the realtime computer docker with,
 ```
 sudo docker-compose --no-recreate -f docker/realtime_computer/docker-compose-gui.yml up 
 ```
@@ -201,6 +206,8 @@ to test, run
 cd /root/git/tests/frankapy_control_test_scripts
 python3 docker_frankapy_test.py
 ```
+This moves the robot to the reset position.
+
 If directly using host workstation and not docker, 
 ```
 cd <path to frankapy>/frankapy 
@@ -226,15 +233,17 @@ Please checkout [calibration/docs](calibration/docs) for documentations of hand-
 To run the robotiq device, first in a terminal do
 ```sh
 (sudo) docker exec -it workstation_computer_docker bash
-source ~/git/catkin_ws/devel/setup.bash
+source ~/git/robotiq_ws/devel/setup.bash
 rosrun robotiq_2f_gripper_control Robotiq2FGripperRtuNode.py /dev/ttyUSB0
 ```
 **Note** when connecting the robotiq gripper to the workstation pc, it may open different file descriptor. In our case it was: `/dev/ttyUSB0`. You may check the following command to see which usb port the robotiq is connected to:  `ls /dev/ttyUSB*`
 
+**Note** if the gripper is not connected or turned on when starting the docker container, it is not recognized. In that case, restart the docker container.
+
 In another terminal do
 ```sh
 (sudo) docker exec -it workstation_computer_docker bash
-source ~/git/catkin_ws/devel/setup.bash
+source ~/git/robotiq_ws/devel/setup.bash
 rosrun robotiq_2f_gripper_control Robotiq2FGripperSimpleController.py
 ```
 then you can try first reset the gripper by passing `r` and then activate the gripper by passing `a`.
